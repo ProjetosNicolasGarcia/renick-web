@@ -1,79 +1,116 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 
-export default function Register() {
-  const [email, setEmail] = useState('');
+export default function ResetPassword() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const email = searchParams.get('email');
+  
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register, isLoading, error } = useAuthStore();
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // novos estados para a checagem previa
+  const [isValidating, setIsValidating] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
+  
+  const { resetPassword, validateResetToken, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+  // efeito rodado na montagem para checar o token
+  useEffect(() => {
+    const checkToken = async () => {
+      if (!email || !token) {
+        setIsTokenValid(false);
+        setIsValidating(false);
+        return;
+      }
+      
+      const valid = await validateResetToken(email, token);
+      setIsTokenValid(valid);
+      setIsValidating(false);
+    };
+
+    checkToken();
+  }, [email, token, validateResetToken]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await register(email, password, passwordConfirmation);
+      await resetPassword(token, email, password, passwordConfirmation);
+      setSuccessMessage('Senha alterada com sucesso! Redirecionando para o login...');
       
-      if (data?.requires_2fa) {
-        navigate('/verify-2fa', { state: { email } });
-      } else {
-        navigate('/checkout');
-      }
+      setTimeout(() => {
+        navigate('/login');
+      }, 2500);
     } catch (err) {
       console.error(err);
     }
   };
 
+  // tela de carregamento da checagem
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center font-poppins text-[#0A0A0A] font-bold">
+        Validando link de segurança...
+      </div>
+    );
+  }
+
+  // tela de bloqueio se o token for invalido/utilizado
+  if (!isTokenValid) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center pt-16 px-4 font-poppins text-center">
+        <h1 className="font-suez text-[32px] md:text-[40px] text-[#D22A31] uppercase mb-6">
+          Link Inválido
+        </h1>
+        <p className="font-bold text-lg text-[#0A0A0A] max-w-[480px] mb-8">
+          Este link de redefinição de senha é inválido, expirou ou já foi utilizado.
+        </p>
+        <Link 
+          to="/forgot-password" 
+          className="h-[62px] w-full max-w-[480px] bg-[#1E45FB] text-[#FAFAFA] font-bold text-[20px] uppercase flex items-center justify-center hover:opacity-90 transition-opacity"
+        >
+          Solicitar novo link
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center pt-8 md:pt-16 px-4 font-poppins">
       <div className="w-full max-w-[480px]">
-        
         <h1 className="font-suez text-[32px] md:text-[40px] text-[#1E45FB] uppercase mb-6 md:mb-8">
-          Cadastro
+          Alteração de senha
         </h1>
         
-        <div className="mb-6 flex flex-col gap-4">
-          <span className="font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase">
-            Utilize sua conta Google
+        <div className="mb-6">
+          <span className="font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase block mb-4">
+            Insira uma nova senha
           </span>
-          <button 
-            type="button"
-            className="cursor-pointer h-[62px] w-full bg-[#1E45FB] flex items-center justify-center rounded-none hover:opacity-90 transition-opacity"
-          >
-            <div className="bg-white p-1.5 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-            </div>
-          </button>
+          <p className="font-bold text-sm text-[#0A0A0A] uppercase mb-2">A nova senha deve atender a:</p>
+          <ul className="list-disc pl-5 font-bold text-sm text-[#0A0A0A]">
+            <li>Mínimo de 8 caracteres</li>
+            <li>Uma letra maiúscula</li>
+            <li>Um número</li>
+            <li>Um símbolo especial</li>
+            <li>Ser diferente da anterior</li>
+          </ul>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-          <span className="font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase">
-            Utilize seu email
-          </span>
-          
-          <input 
-            type="email" 
-            placeholder="EMAIL" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="cursor-text font-poppins font-bold h-[62px] w-full bg-[#FAFAFA] border border-[#0A0A0A]/25 focus:border-[#0A0A0A] outline-none px-4 text-[#0A0A0A] placeholder:text-[#0A0A0A]/25 placeholder:uppercase placeholder:font-bold text-base md:text-lg rounded-none transition-colors"
-            required
-          />
           
           <div className="relative w-full">
             <input 
               type={showPassword ? "text" : "password"} 
-              placeholder="SENHA" 
+              placeholder="NOVA SENHA" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="cursor-text font-poppins font-bold h-[62px] w-full bg-[#FAFAFA] border border-[#0A0A0A]/25 focus:border-[#0A0A0A] outline-none px-4 pr-12 text-[#0A0A0A] placeholder:text-[#0A0A0A]/25 placeholder:uppercase placeholder:font-bold text-base md:text-lg rounded-none transition-colors"
+              disabled={Boolean(successMessage)}
+              className="cursor-text font-poppins font-bold h-[62px] w-full bg-[#FAFAFA] border border-[#0A0A0A]/25 focus:border-[#0A0A0A] outline-none px-4 pr-12 text-[#0A0A0A] placeholder:text-[#0A0A0A]/25 placeholder:uppercase placeholder:font-bold text-base md:text-lg rounded-none transition-colors disabled:opacity-50"
               required
             />
             <button 
@@ -97,10 +134,11 @@ const handleSubmit = async (e) => {
           <div className="relative w-full">
             <input 
               type={showConfirmPassword ? "text" : "password"} 
-              placeholder="CONFIRMAR SENHA" 
+              placeholder="CONFIRMAR NOVA SENHA" 
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
-              className="cursor-text font-poppins font-bold h-[62px] w-full bg-[#FAFAFA] border border-[#0A0A0A]/25 focus:border-[#0A0A0A] outline-none px-4 pr-12 text-[#0A0A0A] placeholder:text-[#0A0A0A]/25 placeholder:uppercase placeholder:font-bold text-base md:text-lg rounded-none transition-colors"
+              disabled={Boolean(successMessage)}
+              className="cursor-text font-poppins font-bold h-[62px] w-full bg-[#FAFAFA] border border-[#0A0A0A]/25 focus:border-[#0A0A0A] outline-none px-4 pr-12 text-[#0A0A0A] placeholder:text-[#0A0A0A]/25 placeholder:uppercase placeholder:font-bold text-base md:text-lg rounded-none transition-colors disabled:opacity-50"
               required
             />
             <button 
@@ -122,22 +160,16 @@ const handleSubmit = async (e) => {
           </div>
 
           {error && <span className="text-[#D22A31] font-bold text-sm">{error}</span>}
+          {successMessage && <span className="text-[#CDF22B] font-bold text-sm">{successMessage}</span>}
 
           <button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || Boolean(successMessage)}
             className="cursor-pointer h-[62px] mt-2 w-full bg-[#CDF22B] text-[#FAFAFA] font-poppins font-bold text-[20px] uppercase rounded-none disabled:opacity-50 hover:opacity-90 transition-opacity"
           >
-            {isLoading ? 'Cadastrando...' : 'Cadastrar'}
+            {isLoading ? 'Confirmando...' : 'Confirmar'}
           </button>
-
-          <div className="flex justify-end mt-2">
-            <Link to="/login" className="cursor-pointer text-sm md:text-base text-[#0A0A0A]/25 font-bold hover:text-[#0A0A0A]/60 uppercase transition-colors">
-              Já possuo uma conta
-            </Link>
-          </div>
         </form>
-
       </div>
     </div>
   );

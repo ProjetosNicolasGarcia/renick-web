@@ -9,11 +9,17 @@ export default function Login() {
   const { login, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e) => { 
     e.preventDefault();
     try {
-      await login(email, password);
-      navigate('/checkout');
+      const data = await login(email, password); // ou register(...)
+      
+      if (data?.requires_2fa) {
+        // leva o email no state do router para popular a tela de verificacao
+        navigate('/verify-2fa', { state: { email } });
+      } else {
+        navigate('/checkout');
+      }
     } catch (err) {
       console.error(err);
     }
