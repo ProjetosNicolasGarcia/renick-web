@@ -8,17 +8,17 @@ export const useAuthStore = create((set) => ({
   error: null,
 
   // autenticacao basica
-    login: async (email, password) => {
-        set({ isLoading: true, error: null });
-        try {
-        const response = await api.post('/auth/login', { email, password });
-        set({ isLoading: false });
-        return response.data; // retorna para o componente avaliar o requires_2fa
-        } catch (error) {
-        set({ error: error.response?.data?.message || 'Erro ao realizar login.', isLoading: false });
-        throw error;
-        }
-    },
+  login: async (email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      set({ isLoading: false });
+      return response.data; // retorna para o componente avaliar o requires_2fa
+    } catch (error) {
+      set({ error: error.response?.data?.message || 'Erro ao realizar login.', isLoading: false });
+      throw error;
+    }
+  },
 
   // cadastro de novo usuario
   register: async (email, password, passwordConfirmation) => {
@@ -68,7 +68,7 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-// validacao previa do token de redefinicao
+  // validacao previa do token de redefinicao
   validateResetToken: async (email, token) => {
     try {
       await api.get('/auth/reset-password/validate', { params: { email, token } });
@@ -104,4 +104,67 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
+
+  // atualiza dados do perfil
+updateProfile: async (email, newPassword, currentPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      const payload = { 
+        email, 
+        current_password: currentPassword 
+      };
+      
+      // se o usuario preencheu uma nova senha, adiciona ao payload
+      if (newPassword) {
+        payload.password = newPassword;
+      }
+      
+      const response = await api.patch('/me', payload);
+      set({ user: response.data, isLoading: false });
+      return response.data;
+    } catch (error) {
+      set({ error: error.response?.data?.message || 'Erro ao atualizar perfil.', isLoading: false });
+      throw error;
+    }
+  },
+
+  // exclui a conta do usuario
+  deleteAccount: async (currentPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.delete('/me', { data: { current_password: currentPassword } });
+      localStorage.removeItem('token');
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    } catch (error) {
+      set({ error: error.response?.data?.message || 'Erro ao apagar conta.', isLoading: false });
+      throw error;
+    }
+  },
+
+  // busca o perfil atualizado
+  fetchProfile: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/me');
+      set({ user: response.data, isAuthenticated: true, isLoading: false });
+      return response.data;
+    } catch (error) {
+      // se o token for invalido ou expirado, limpa a sessao
+      localStorage.removeItem('token');
+      set({ user: null, isAuthenticated: false, isLoading: false });
+      throw error;
+    }
+  },
+
+  // desloga o usuario
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('token');
+      set({ user: null, isAuthenticated: false });
+    }
+  }
+
+  
 }));
