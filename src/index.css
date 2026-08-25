@@ -1,1 +1,15 @@
+/* 1. imports externos obrigatoriamente no topo */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Suez+One&display=swap');
 @import "tailwindcss";
+
+/* 2. mapeamento de tokens de fonte no tailwind v4 */
+@theme {
+  --font-suez: "Suez One", serif;
+  --font-poppins: "Poppins", sans-serif;
+}
+
+/* 3. estilos base */
+body {
+  background-color: #FAFAFA;
+  font-family: var(--font-poppins);
+}
