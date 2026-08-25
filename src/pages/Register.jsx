@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '../stores/useAuthStore';
 
 export default function Register() {
@@ -8,10 +9,29 @@ export default function Register() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register, isLoading, error } = useAuthStore();
+  
+  const { register, googleLogin, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
+  // Fluxo Google
+const handleGoogleSuccess = async (tokenResponse) => {
+    try {
+      // envia o token recebido diretamente para a api
+      const token = tokenResponse.credential || tokenResponse.access_token;
+      await googleLogin(token);
+      navigate('/checkout');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => console.error('Falha ao abrir pop-up do Google'),
+  });
+
+  // Fluxo Email/Senha
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = await register(email, password, passwordConfirmation);
@@ -34,12 +54,15 @@ const handleSubmit = async (e) => {
           Cadastro
         </h1>
         
+        {/* Bloco Google */}
         <div className="mb-6 flex flex-col gap-4">
           <span className="font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase">
             Utilize sua conta Google
           </span>
           <button 
             type="button"
+            aria-label="Login com Google"
+            onClick={() => loginWithGoogle()}
             className="cursor-pointer h-[62px] w-full bg-[#1E45FB] flex items-center justify-center rounded-none hover:opacity-90 transition-opacity"
           >
             <div className="bg-white p-1.5 rounded-full flex items-center justify-center">
@@ -53,6 +76,7 @@ const handleSubmit = async (e) => {
           </button>
         </div>
 
+        {/* Bloco Email */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
           <span className="font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase">
             Utilize seu email

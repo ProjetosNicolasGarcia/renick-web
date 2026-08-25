@@ -41,6 +41,21 @@ export const useAuthStore = create((set) => ({
     }
   },
 
+  // login via google
+  googleLogin: async (idToken) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post('/auth/google', { id_token: idToken });
+      const { access_token, user } = response.data;
+      
+      localStorage.setItem('token', access_token);
+      set({ user, isAuthenticated: true, isLoading: false });
+    } catch (error) {
+      set({ error: error.response?.data?.message || 'Erro ao autenticar com o Google.', isLoading: false });
+      throw error;
+    }
+  },
+
   // solicitacao de recuperacao de senha
   forgotPassword: async (email) => {
     set({ isLoading: true, error: null });
@@ -52,7 +67,7 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
-  
+
 // validacao previa do token de redefinicao
   validateResetToken: async (email, token) => {
     try {
