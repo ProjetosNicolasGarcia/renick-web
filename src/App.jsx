@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Verify2FA from './pages/Verify2FA';
 import Profile from './pages/Profile';
+import Addresses from './pages/Addresses';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-2fa" element={<Verify2FA />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/addresses" element={<Addresses />} />
         </Route>
       </Routes>
     </BrowserRouter>
