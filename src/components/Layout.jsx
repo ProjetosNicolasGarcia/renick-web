@@ -21,7 +21,7 @@ export default function Layout() {
       <CartDrawer />
       <SearchDrawer />
       
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-16 py-8">
+      <main className="flex-1 w-full flex flex-col">
         <Outlet />
       </main>
       
