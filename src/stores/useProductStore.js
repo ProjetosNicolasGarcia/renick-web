@@ -6,6 +6,9 @@ export const useProductStore = create((set) => ({
   related: [],
   isLoading: false,
   error: null,
+  list: [],
+  meta: null,
+  isLoadingList: false,
 
   fetchProductData: async (id) => {
     set({ isLoading: true, error: null });
@@ -24,5 +27,16 @@ export const useProductStore = create((set) => ({
     }
   },
 
-  clearProduct: () => set({ product: null, related: [] })
+  clearProduct: () => set({ product: null, related: [] }),
+
+  fetchProductsList: async (params) => {
+    set({ isLoadingList: true });
+    try {
+      // params e um objeto gerado pelo searchParams, ex: { q: 'camisa', gender: 'masculino' }
+      const res = await api.get('/products', { params });
+      set({ list: res.data.data, meta: res.data.meta, isLoadingList: false });
+    } catch (err) {
+      set({ isLoadingList: false });
+    }
+  }
 }));

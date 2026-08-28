@@ -38,6 +38,6 @@ describe('Header Component', () => {
     // Submete o formulário diretamente (melhor prática para testes)
     fireEvent.submit(form);
     
-    expect(mockNavigate).toHaveBeenCalledWith('/products?q=calça');
+   expect(mockNavigate).toHaveBeenCalledWith('/products?q=cal%C3%A7a');
   });
 });
