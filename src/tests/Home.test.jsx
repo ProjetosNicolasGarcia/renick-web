@@ -65,7 +65,7 @@ describe('Home Page (Landing)', () => {
     expect(screen.getByText('Camisa Polo')).toBeInTheDocument();
     
     // Frase informativa
-    expect(screen.getByText(/no pix ou cartão/i)).toBeInTheDocument();
+    expect(screen.getByText(/5% OFF NO PIX OU NO CARTÃO EM ATÉ 3X SEM JUROS/i)).toBeInTheDocument();
     
     // Botão de compra
     expect(screen.getByRole('button', { name: /comprar/i })).toBeInTheDocument();
