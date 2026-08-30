@@ -38,5 +38,15 @@ export const useProductStore = create((set) => ({
     } catch (err) {
       set({ isLoadingList: false });
     }
+  },
+  
+  fetchAttributes: async () => {
+    try {
+      const res = await api.get('/attributes');
+      set({ attributes: res.data });
+    } catch (error) {
+      console.error('Failed to fetch attributes', error);
+    }
   }
+
 }));

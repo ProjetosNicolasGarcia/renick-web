@@ -1,57 +1,84 @@
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useProductStore } from '../stores/useProductStore';
+import { useUiStore } from '../stores/useUiStore';
 import ProductCard from '../components/ProductCard';
+import FilterSidebar from '../components/FilterSidebar';
+import FilterDrawer from '../components/Drawers/FilterDrawer';
 
 export default function Listing() {
   const [searchParams] = useSearchParams();
   const { list, fetchProductsList, isLoadingList } = useProductStore();
+  const { toggleFilter } = useUiStore();
+  const location = useLocation();
 
+  // Impede pulos ao digitar: o Scroll ao topo só ocorre quando o usuário navega entre rotas diferentes
   useEffect(() => {
-    // converte URLSearchParams iteravel para objeto simples
-    const params = Object.fromEntries([...searchParams]);
-    fetchProductsList(params);
     window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Carrega limite de 100 itens para evitar cortes na listagem
+  useEffect(() => {
+    const params = Object.fromEntries([...searchParams]);
+    params.per_page = 100;
+    fetchProductsList(params);
   }, [searchParams, fetchProductsList]);
 
-  // determina o titulo dinamico com base nos parametros
- let pageTitle = "Catálogo";
-  if (searchParams.get('q')) pageTitle = `Resultados para "${searchParams.get('q')}"`;
-  else if (searchParams.get('collection')) pageTitle = `Coleção ${searchParams.get('collection')}`;
-  else if (searchParams.get('type')) pageTitle = searchParams.get('type').replace(/-/g, ' ');
-  else if (searchParams.get('gender')) pageTitle = searchParams.get('gender');
-  else if (searchParams.get('size')) pageTitle = `Tamanho ${searchParams.get('size')}`; // Adicionado
-  else if (searchParams.get('is_sale') === 'true') pageTitle = "Promoções";
+  // Inteligência de Títulos Limpa
+  let pageTitle = "Catálogo";
+  const paramsCount = Array.from(searchParams.keys()).filter(k => k !== 'page' && k !== 'per_page').length;
+
+  if (paramsCount > 1) {
+    pageTitle = "Resultados";
+  } else if (paramsCount === 1) {
+    if (searchParams.get('q')) pageTitle = `Resultados para "${searchParams.get('q')}"`;
+    else if (searchParams.get('collection')) pageTitle = `Coleção ${searchParams.get('collection')}`;
+    else if (searchParams.get('type')) pageTitle = searchParams.get('type').replace(/-/g, ' ');
+    else if (searchParams.get('gender')) pageTitle = searchParams.get('gender');
+    else if (searchParams.get('size')) pageTitle = `Tamanho ${searchParams.get('size')}`;
+    else if (searchParams.get('is_sale') === 'true') pageTitle = "Promoções";
+    else pageTitle = "Resultados";
+  }
 
   return (
     <div className="w-full bg-[#FAFAFA] min-h-screen pb-16 pt-8 px-4 md:px-16 max-w-[1440px] mx-auto flex flex-col gap-6">
       
       <div className="flex justify-between items-end border-b border-[#0A0A0A]/10 pb-4">
-        <h1 className="font-suez text-[32px] md:text-[40px] text-[#1E45FB] uppercase">
+        <h1 className="font-suez text-[32px] md:text-[40px] text-[#1E45FB] uppercase truncate">
           {pageTitle}
         </h1>
-        <button aria-label="Filtrar" className="text-[#0A0A0A] hover:text-[#1E45FB] transition-colors cursor-pointer mb-2">
-          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4V6.58579C21 6.851 20.8946 7.10536 20.7071 7.29289L14.2929 13.7071C14.1054 13.8946 14 14.149 14 14.4142V20C14 20.5523 13.5523 21 13 21H11C10.4477 21 10 20.5523 10 20V14.4142C10 14.149 9.89464 13.8946 9.70711 13.7071L3.29289 7.29289C3.10536 7.10536 3 6.851 3 6.58579V4Z" />
+        
+        {/* Ícone de Funil para Dispositivos Móveis */}
+        <button onClick={toggleFilter} aria-label="Filtrar" className="lg:hidden flex items-center justify-center w-12 h-12 bg-[#FAFAFA] border-2 border-[#1E45FB] text-[#1E45FB] transition-colors cursor-pointer mb-2 shrink-0 ml-4">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
         </button>
       </div>
 
-      {isLoadingList ? (
-        <div className="w-full py-20 flex justify-center font-poppins font-bold text-[20px] text-[#0A0A0A]/25 uppercase">
-          Buscando produtos...
+      <div className="flex gap-8 items-start w-full relative">
+        <FilterSidebar />
+        
+        <div className="flex-1 w-full">
+          {isLoadingList ? (
+            <div className="w-full py-20 flex justify-center font-poppins font-bold text-[20px] text-[#0A0A0A]/25 uppercase">
+              Buscando produtos...
+            </div>
+          ) : list.length === 0 ? (
+            <div className="w-full py-20 flex justify-center font-poppins font-bold text-[20px] text-[#0A0A0A] uppercase">
+              Nenhum produto encontrado.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+              {list.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : list.length === 0 ? (
-        <div className="w-full py-20 flex justify-center font-poppins font-bold text-[20px] text-[#0A0A0A] uppercase">
-          Nenhum produto encontrado.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {list.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
+      </div>
+      
+      <FilterDrawer />
     </div>
   );
 }
