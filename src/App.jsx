@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import Addresses from './pages/Addresses';
 import Product from './pages/Product';
 import Listing from './pages/Listing';
+import Favorites from './pages/Favorites';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/addresses" element={<Addresses />} />
           <Route path="/products" element={<Listing />} />
           <Route path="/products/:id" element={<Product />} />
+          <Route path="/favorites" element={<Favorites />} />
         </Route>
       </Routes>
     </BrowserRouter>

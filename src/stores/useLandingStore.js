@@ -31,4 +31,5 @@ export const useLandingStore = create((set) => ({
       set({ isLoading: false });
     }
   }
+  
 }));

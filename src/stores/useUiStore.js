@@ -23,4 +23,5 @@ export const useUiStore = create((set) => ({
       console.error('Erro ao buscar categorias:', error);
     }
   }
+
 }));

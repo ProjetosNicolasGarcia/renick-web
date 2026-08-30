@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useAddressStore } from '../stores/useAddressesStore';
-import { useAuthStore } from '../stores/useAuthStore';
+import ProfileSidebar from '../components/ProfileSidebar';
 
 export default function Addresses() {
   const { addresses, fetchAddresses, saveAddress, removeAddress } = useAddressStore();
-  const { logout } = useAuthStore();
-  const navigate = useNavigate();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -18,9 +15,9 @@ export default function Addresses() {
 
   useEffect(() => {
     fetchAddresses();
+    window.scrollTo(0, 0);
   }, [fetchAddresses]);
 
-  // Aplica mascara rigorosa e aciona o ViaCEP
   const handleCepChange = async (e) => {
     let value = e.target.value.replace(/\D/g, ''); 
     
@@ -34,7 +31,6 @@ export default function Addresses() {
     
     if (rawCep.length === 8) {
       try {
-        // Utiliza integracao direta com ViaCEP para auto-preenchimento
         const response = await fetch(`https://viacep.com.br/ws/${rawCep}/json/`);
         const data = await response.json();
         
@@ -83,30 +79,13 @@ export default function Addresses() {
     setDeleteModalId(null);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col md:flex-row pt-8 md:pt-16 px-4 md:px-16 font-poppins max-w-6xl mx-auto gap-4 md:gap-8">
+    <div className="w-full bg-[#FAFAFA] min-h-screen pb-16 pt-8 md:pt-16 px-4 md:px-16 max-w-[1440px] mx-auto flex flex-col md:flex-row gap-8 lg:gap-16">
       
-      <nav className="w-full md:w-64 flex flex-col gap-4 mb-8 md:mb-0">
-        <h1 className="font-suez font-normal text-[32px] md:text-[40px] text-[#1E45FB] uppercase mb-4">
-          Perfil
-        </h1>
-        <Link to="/profile" className="cursor-pointer w-fit text-left font-bold text-[20px] uppercase transition-colors text-[#0A0A0A] hover:text-[#1E45FB]">DADOS DA CONTA</Link>
-        <Link to="/profile" className="cursor-pointer w-fit text-left font-bold text-[20px] uppercase transition-colors text-[#0A0A0A] hover:text-[#1E45FB]">PEDIDOS</Link>
-        <span className="cursor-default w-fit text-left font-bold text-[20px] uppercase text-[#1E45FB]">ENDEREÇOS</span>
-        <Link to="/profile" className="cursor-pointer w-fit text-left font-bold text-[20px] uppercase transition-colors text-[#0A0A0A] hover:text-[#1E45FB]">FAVORITOS</Link>
-        <button onClick={handleLogout} className="cursor-pointer w-fit text-left font-bold text-[20px] text-[#D22A31] uppercase mt-4 hover:opacity-80">
-          Sair
-        </button>
-      </nav>
+      <ProfileSidebar />
 
-      <div className="flex-1 w-full max-w-[600px] flex flex-col gap-6">
-        {/* Título de seção atualizado com as diretrizes de H1 */}
-        <h2 className="font-suez text-[32px] md:text-[40px] text-[#1E45FB] uppercase mb-2">
+      <div className="flex-1 w-full max-w-[800px] flex flex-col gap-6">
+        <h2 className="font-suez text-[32px] md:text-[40px] text-[#1E45FB] uppercase border-b border-[#0A0A0A]/10 pb-4 mb-2">
           Endereços
         </h2>
 
@@ -163,7 +142,7 @@ export default function Addresses() {
       </div>
 
       {deleteModalId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]/50 px-4">
           <div className="bg-[#FAFAFA] p-8 max-w-[400px] w-full flex flex-col gap-6 items-center text-center animate-fade-in shadow-xl">
             <h3 className="font-poppins font-bold text-[20px] md:text-[24px] text-[#0A0A0A] uppercase">
               Deseja apagar o endereço?

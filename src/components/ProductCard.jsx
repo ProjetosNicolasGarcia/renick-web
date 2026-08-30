@@ -1,7 +1,29 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useFavoriteStore } from '../stores/useFavoriteStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
+  const { favoriteIds, toggleFavorite } = useFavoriteStore();
+  const { isAuthenticated } = useAuthStore();
+
+  const isFavorited = favoriteIds.includes(product.id);
+
+  const handleFavorite = (e) => {
+    e.preventDefault(); // Impede o redirecionamento caso o botão esteja sobreposto por um Link
+    e.stopPropagation();
+
+    // Regra: Não autenticado vai direto pro Login
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
+    // Altera otimisticamente (vermelho <-> transparente) e chama a API
+    toggleFavorite(product.id);
+  };
+
   return (
     <div className="flex flex-col bg-[#FAFAFA] p-0 group relative w-full h-full">
       
@@ -15,8 +37,17 @@ export default function ProductCard({ product }) {
           />
         </Link>
         
-        <button aria-label="Favoritar" className="absolute top-3 right-3 z-10 text-[#0A0A0A] hover:text-[#D22A31] transition-colors cursor-pointer bg-[#FAFAFA]/50 rounded-full p-1.5 backdrop-blur-sm">
-          <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button 
+          onClick={handleFavorite}
+          aria-label="Favoritar" 
+          className="absolute top-3 right-3 z-10 text-[#0A0A0A] hover:text-[#D22A31] transition-colors cursor-pointer bg-[#FAFAFA]/50 rounded-full p-1.5 backdrop-blur-sm"
+        >
+          {/* A cor e o preenchimento reagem ao Zustand (isFavorited) de forma reativa */}
+          <svg 
+            className={`w-6 h-6 md:w-7 md:h-7 transition-colors ${isFavorited ? 'text-[#D22A31] fill-[#D22A31]' : 'fill-none'}`} 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
           </svg>
         </button>
