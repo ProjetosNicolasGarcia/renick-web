@@ -4,18 +4,20 @@ import { useAuthStore } from '../stores/useAuthStore';
 
 export default function Verify2FA() {
   const [code, setCode] = useState('');
-  const { verify2fa, isLoading, error } = useAuthStore();
+  const { verify2FA, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // extrai email vindo do state do react router no fluxo de login
+  // extrai o email e a intenção (from) enviados pela tela anterior (Login)
   const email = location.state?.email || '';
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await verify2fa(email, code);
-      navigate('/checkout');
+      await verify2FA(email, code);
+      // Usa o replace: true para impedir que o usuário volte para o formulário de 2FA
+      navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
     }

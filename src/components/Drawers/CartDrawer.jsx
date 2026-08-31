@@ -2,17 +2,25 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUiStore } from '../../stores/useUiStore';
 import { useCartStore } from '../../stores/useCartStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-export default function CartDrawer() {
+  export default function CartDrawer() {
   const { isCartOpen, closeAll } = useUiStore();
   const { items } = useCartStore();
   const navigate = useNavigate();
 
   if (!isCartOpen) return null;
 
-  const handleCheckout = () => {
-    closeAll();
-    navigate('/checkout'); // O roteamento ira gerenciar se manda pro login ou nao
+const handleCheckoutClick = () => {
+    closeAll(); // Fecha o drawer do carrinho
+    
+    if (!isAuthenticated) {
+      // Redireciona para o login informando que o destino final é o checkout
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+    
+    navigate('/checkout');
   };
 
   return (
@@ -35,7 +43,7 @@ export default function CartDrawer() {
 
         <div className="mt-4 pt-4 border-t border-[#0A0A0A]/10">
           <button 
-            onClick={handleCheckout}
+            onClick={handleCheckoutClick}
             disabled={items.length === 0}
             className="cursor-pointer h-[62px] w-full bg-[#1E45FB] text-[#FAFAFA] font-bold text-[20px] uppercase disabled:opacity-50"
           >

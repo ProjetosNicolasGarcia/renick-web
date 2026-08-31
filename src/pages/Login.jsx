@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '../stores/useAuthStore';
 
@@ -10,14 +10,18 @@ export default function Login() {
   
   const { login, googleLogin, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 1. Captura a intenção de navegação. Fallback para a Home (ou seja, raiz)
+  const from = location.state?.from || '/';
 
   // Fluxo Google
- const handleGoogleSuccess = async (tokenResponse) => {
+  const handleGoogleSuccess = async (tokenResponse) => {
     try {
-      // envia o token recebido diretamente para a api
       const token = tokenResponse.credential || tokenResponse.access_token;
       await googleLogin(token);
-      navigate('/checkout');
+      // Mantém o redirecionamento intencional, e destrói o login do history
+      navigate(from, { replace: true });
     } catch (err) {
       console.error(err);
     }
@@ -32,12 +36,13 @@ export default function Login() {
   const handleLogin = async (e) => { 
     e.preventDefault();
     try {
-      const data = await login(email, password);
+      const data = await login({ email, password }); // Alterado para enviar objeto (Zustand)
       
-      if (data?.requires_2fa) {
-        navigate('/verify-2fa', { state: { email } });
+      if (data?.requires2FA) {
+        // Se precisa de 2FA, fofoca a intenção final para a próxima tela
+        navigate('/verify-2fa', { state: { email, from } });
       } else {
-        navigate('/checkout');
+        navigate(from, { replace: true });
       }
     } catch (err) {
       console.error(err);

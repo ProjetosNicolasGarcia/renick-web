@@ -1,21 +1,32 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
 
   // autenticacao basica
-  login: async (email, password) => {
+  login: async (credentials) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.post('/auth/login', { email, password });
-      set({ isLoading: false });
-      return response.data; // retorna para o componente avaliar o requires_2fa
+      const res = await api.post('/auth/login', credentials);
+      
+      // Fluxo 2FA: Salva token temporário e aguarda código
+      if (res.status === 202) {
+        sessionStorage.setItem('temp_token', res.data.temp_token);
+        set({ isLoading: false });
+        return { requires2FA: true };
+      }
+
+      // Login direto: Salva token permanente e hidrata o estado IMEDIATAMENTE
+      localStorage.setItem('token', res.data.access_token);
+      await get().fetchProfile(); 
+      return { requires2FA: false };
+
     } catch (error) {
-      set({ error: error.response?.data?.message || 'Erro ao realizar login.', isLoading: false });
+      set({ error: error.response?.data?.message || 'Erro ao realizar login', isLoading: false });
       throw error;
     }
   },
@@ -30,6 +41,11 @@ export const useAuthStore = create((set) => ({
         password, 
         password_confirmation: passwordConfirmation 
       });
+      
+      // Cadastro concluído: Salva o token e hidrata o estado para ir direto ao checkout
+      localStorage.setItem('token', response.data.access_token);
+      await get().fetchProfile();
+      
       set({ isLoading: false });
       return response.data;
     } catch (error) {
@@ -91,22 +107,28 @@ export const useAuthStore = create((set) => ({
   },
 
   // validacao de codigo 2fa
-  verify2fa: async (email, code) => {
+  verify2FA: async (email, code) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.post('/auth/2fa/verify', { email, code });
-      const { access_token, user } = response.data;
-      
-      localStorage.setItem('token', access_token);
-      set({ user, isAuthenticated: true, isLoading: false });
+      const tempToken = sessionStorage.getItem('temp_token');
+      const res = await api.post('/auth/2fa/verify', { email, code }, {
+        headers: { Authorization: `Bearer ${tempToken}` }
+      });
+
+      // Salva token final e hidrata o estado IMEDIATAMENTE
+      localStorage.setItem('token', res.data.access_token);
+      sessionStorage.removeItem('temp_token');
+      await get().fetchProfile();
+      set({ isLoading: false });
+
     } catch (error) {
-      set({ error: error.response?.data?.message || 'Código inválido.', isLoading: false });
+      set({ error: error.response?.data?.message || 'Código inválido', isLoading: false });
       throw error;
     }
   },
 
   // atualiza dados do perfil
-updateProfile: async (email, newPassword, currentPassword) => {
+  updateProfile: async (email, newPassword, currentPassword) => {
     set({ isLoading: true, error: null });
     try {
       const payload = { 
@@ -165,6 +187,4 @@ updateProfile: async (email, newPassword, currentPassword) => {
       set({ user: null, isAuthenticated: false });
     }
   }
-
-  
 }));
