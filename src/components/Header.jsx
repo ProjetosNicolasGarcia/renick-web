@@ -7,7 +7,7 @@ import { useCartStore } from '../stores/useCartStore';
 export default function Header() {
   const { toggleMenu, toggleCart, toggleSearch } = useUiStore();
   const { isAuthenticated } = useAuthStore();
-  const { items } = useCartStore();
+  const { cart } = useCartStore(); // Correção: Extrai 'cart' em vez de 'items'
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -150,9 +150,10 @@ export default function Header() {
           <svg className="w-7 h-7 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
           </svg>
-          {items.length > 0 && (
-            <span className="absolute top-0 right-0 bg-[#D22A31] text-[#FAFAFA] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md animate-bounce">
-              {items.length}
+          {/* Correção: Validação segura contra a nova estrutura do cart */}
+          {(cart?.items_count > 0 || cart?.items?.length > 0) && (
+            <span className="absolute top-0 right-0 bg-[#D22A31] text-[#FAFAFA] text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center translate-x-1 -translate-y-1">
+              {cart?.items_count || cart?.items?.length}
             </span>
           )}
         </button>

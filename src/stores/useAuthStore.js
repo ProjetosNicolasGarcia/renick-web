@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
+import { useCartStore } from './useCartStore';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -13,18 +14,21 @@ export const useAuthStore = create((set, get) => ({
     try {
       const res = await api.post('/auth/login', credentials);
       
-      // Fluxo 2FA: Salva token temporário e aguarda código
-      if (res.status === 202) {
-        sessionStorage.setItem('temp_token', res.data.temp_token);
+      // Fluxo 2FA: Salva token temporário e interrompe antes do fetchProfile
+      if (res.status === 202 || res.data?.requires_2fa || res.data?.temp_token) {
+        sessionStorage.setItem('temp_token', res.data.temp_token || res.data.access_token);
         set({ isLoading: false });
-        return { requires2FA: true };
+        return { requires_2fa: true };
       }
 
-      // Login direto: Salva token permanente e hidrata o estado IMEDIATAMENTE
+      // Login direto
       localStorage.setItem('token', res.data.access_token);
+      localStorage.removeItem('cart_session_id'); // Limpa carrinho anônimo
+      
       await get().fetchProfile(); 
-      return { requires2FA: false };
-
+      await useCartStore.getState().fetchCart(); // Puxa o carrinho do usuário
+      
+      return { requires_2fa: false };
     } catch (error) {
       set({ error: error.response?.data?.message || 'Erro ao realizar login', isLoading: false });
       throw error;
@@ -35,16 +39,25 @@ export const useAuthStore = create((set, get) => ({
   register: async (email, password, passwordConfirmation) => {
     set({ isLoading: true, error: null });
     try {
-      // mapeamento explicito para a chave snake_case esperada pelo backend/openapi
       const response = await api.post('/users', { 
         email, 
         password, 
         password_confirmation: passwordConfirmation 
       });
       
-      // Cadastro concluído: Salva o token e hidrata o estado para ir direto ao checkout
+      // Fluxo 2FA ativado no cadastro: não executa fetchProfile
+      if (response.status === 202 || response.data?.requires_2fa || response.data?.temp_token) {
+        sessionStorage.setItem('temp_token', response.data.temp_token || response.data.access_token);
+        set({ isLoading: false });
+        return { requires_2fa: true };
+      }
+      
+      // Cadastro concluído diretamente
       localStorage.setItem('token', response.data.access_token);
+      localStorage.removeItem('cart_session_id');
+      
       await get().fetchProfile();
+      await useCartStore.getState().fetchCart();
       
       set({ isLoading: false });
       return response.data;
@@ -65,7 +78,10 @@ export const useAuthStore = create((set, get) => ({
       const { access_token, user } = response.data;
       
       localStorage.setItem('token', access_token);
+      localStorage.removeItem('cart_session_id');
+      
       set({ user, isAuthenticated: true, isLoading: false });
+      await useCartStore.getState().fetchCart();
     } catch (error) {
       set({ error: error.response?.data?.message || 'Erro ao autenticar com o Google.', isLoading: false });
       throw error;
@@ -115,12 +131,15 @@ export const useAuthStore = create((set, get) => ({
         headers: { Authorization: `Bearer ${tempToken}` }
       });
 
-      // Salva token final e hidrata o estado IMEDIATAMENTE
+      // Validação passou: transforma temp_token em definitivo
       localStorage.setItem('token', res.data.access_token);
       sessionStorage.removeItem('temp_token');
+      localStorage.removeItem('cart_session_id'); // Limpa carrinho anônimo da sessão 2FA
+      
       await get().fetchProfile();
+      await useCartStore.getState().fetchCart();
+      
       set({ isLoading: false });
-
     } catch (error) {
       set({ error: error.response?.data?.message || 'Código inválido', isLoading: false });
       throw error;
@@ -136,7 +155,6 @@ export const useAuthStore = create((set, get) => ({
         current_password: currentPassword 
       };
       
-      // se o usuario preencheu uma nova senha, adiciona ao payload
       if (newPassword) {
         payload.password = newPassword;
       }
@@ -171,7 +189,6 @@ export const useAuthStore = create((set, get) => ({
       set({ user: response.data, isAuthenticated: true, isLoading: false });
       return response.data;
     } catch (error) {
-      // se o token for invalido ou expirado, limpa a sessao
       localStorage.removeItem('token');
       set({ user: null, isAuthenticated: false, isLoading: false });
       throw error;
@@ -179,12 +196,18 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // desloga o usuario
-  logout: async () => {
+ logout: async () => {
     try {
       await api.post('/auth/logout');
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('cart_session_id');
       set({ user: null, isAuthenticated: false });
+      
+      // Limpa a memória instantaneamente e puxa um carrinho vazio anônimo
+      useCartStore.getState().clearCart();
+      useCartStore.getState().fetchCart();
     }
   }
+  
 }));

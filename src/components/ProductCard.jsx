@@ -2,31 +2,48 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useFavoriteStore } from '../stores/useFavoriteStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useCartStore } from '../stores/useCartStore';
+import { useUiStore } from '../stores/useUiStore';
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const { favoriteIds, toggleFavorite } = useFavoriteStore();
   const { isAuthenticated } = useAuthStore();
+  const { addItem, isLoading: isCartLoading } = useCartStore();
+  const { toggleCart } = useUiStore();
 
   const isFavorited = favoriteIds.includes(product.id);
 
   const handleFavorite = (e) => {
-    e.preventDefault(); // Impede o redirecionamento caso o botão esteja sobreposto por um Link
+    e.preventDefault();
     e.stopPropagation();
 
-    // Regra: Não autenticado vai direto pro Login
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-    
-    // Altera otimisticamente (vermelho <-> transparente) e chama a API
     toggleFavorite(product.id);
+  };
+
+  const handleBuyClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // possui mais de uma variante, envia o id para a pagina de detalhe
+    if (product.variants?.length > 1) {
+      navigate(`/products/${product.id}`);
+      return;
+    }
+    
+    // apenas uma variante, adiciona direto
+    if (product.variants?.length === 1) {
+      const success = await addItem(product.variants[0].id, 1);
+      if(success) toggleCart();
+    }
   };
 
   return (
     <div className="flex flex-col bg-[#FAFAFA] p-0 group relative w-full h-full">
-      
       <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#FAFAFA] shrink-0">
         <Link to={`/products/${product.id}`} className="block w-full h-full flex items-center justify-center p-2">
           <img 
@@ -36,28 +53,19 @@ export default function ProductCard({ product }) {
             className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
-        
         <button 
           onClick={handleFavorite}
           aria-label="Favoritar" 
           className="absolute top-3 right-3 z-10 text-[#0A0A0A] hover:text-[#D22A31] transition-colors cursor-pointer bg-[#FAFAFA]/50 rounded-full p-1.5 backdrop-blur-sm"
         >
-          {/* A cor e o preenchimento reagem ao Zustand (isFavorited) de forma reativa */}
-          <svg 
-            className={`w-6 h-6 md:w-7 md:h-7 transition-colors ${isFavorited ? 'text-[#D22A31] fill-[#D22A31]' : 'fill-none'}`} 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
+          <svg className={`w-6 h-6 md:w-7 md:h-7 transition-colors ${isFavorited ? 'text-[#D22A31] fill-[#D22A31]' : 'fill-none'}`} stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
           </svg>
         </button>
       </div>
       
       <div className="flex flex-col flex-1 pt-3 gap-1">
-        <h3 className="font-poppins font-bold text-[12px] md:text-[14px] text-[#0A0A0A] uppercase line-clamp-2 min-h-[36px] md:min-h-[42px]">
-          {product.name}
-        </h3>
-        
+        <h3 className="font-poppins font-bold text-[12px] md:text-[14px] text-[#0A0A0A] uppercase line-clamp-2 min-h-[36px] md:min-h-[42px]">{product.name}</h3>
         <div className="flex flex-wrap items-baseline gap-2 mt-1">
           {product.promotional_price ? (
             <>
@@ -74,14 +82,15 @@ export default function ProductCard({ product }) {
             </span>
           )}
         </div>
-        
         <p className="font-poppins font-bold text-[10px] md:text-[12px] text-[#0A0A0A]/60 uppercase">
-          5% OFF NO PIX OU NO CARTÃO EM ATÉ  3X SEM JUROS
+          5% OFF NO PIX OU NO CARTÃO EM ATÉ 3X SEM JUROS
         </p>
-        
-        {/* mt-auto empurra o botão sempre para o limite inferior do card */}
-        <button className="mt-auto h-[40px] md:h-[48px] w-full bg-[#CDF22B] text-[#FAFAFA] font-bold text-[14px] md:text-[16px] uppercase cursor-pointer lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
-          Comprar
+        <button 
+          onClick={handleBuyClick} 
+          disabled={isCartLoading}
+          className="mt-auto h-[40px] md:h-[48px] w-full bg-[#CDF22B] text-[#FAFAFA] font-bold text-[14px] md:text-[16px] uppercase cursor-pointer lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-50"
+        >
+          {isCartLoading ? '...' : 'Comprar'}
         </button>
       </div>
     </div>

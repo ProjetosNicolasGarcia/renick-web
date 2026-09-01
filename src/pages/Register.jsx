@@ -14,7 +14,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   // Fluxo Google
-const handleGoogleSuccess = async (tokenResponse) => {
+  const handleGoogleSuccess = async (tokenResponse) => {
     try {
       // envia o token recebido diretamente para a api
       const token = tokenResponse.credential || tokenResponse.access_token;

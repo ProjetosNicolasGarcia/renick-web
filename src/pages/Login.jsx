@@ -36,9 +36,10 @@ export default function Login() {
   const handleLogin = async (e) => { 
     e.preventDefault();
     try {
-      const data = await login({ email, password }); // Alterado para enviar objeto (Zustand)
+      const data = await login({ email, password });
       
-      if (data?.requires2FA) {
+      // CORREÇÃO: Utilizando a chave exata retornada pelo Zustand (requires_2fa)
+      if (data?.requires_2fa) {
         // Se precisa de 2FA, fofoca a intenção final para a próxima tela
         navigate('/verify-2fa', { state: { email, from } });
       } else {
