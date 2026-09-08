@@ -8,21 +8,22 @@ export default function Footer() {
     <footer className="bg-[#1E45FB] w-full px-4 md:px-16 py-12 mt-auto flex flex-col font-poppins">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 w-full max-w-6xl mx-auto">
         
-        <div className="flex flex-col gap-4">
+   <div className="flex flex-col gap-4">
           <h3 className="font-suez text-[20px] md:text-[24px] text-[#CDF22B] uppercase">Institucional</h3>
           <div className="flex flex-col gap-3 font-bold text-[16px] text-[#FAFAFA] uppercase">
-            <Link to="/sobre-nos" className="cursor-pointer">Sobre Nós</Link>
-            <Link to="/privacidade" className="cursor-pointer">Política de Privacidade</Link>
-            <Link to="/termos" className="cursor-pointer">Termos de Uso</Link>
-            <Link to="/acessibilidade" className="cursor-pointer">Acessibilidade</Link>
+            {/* O atributo 'to' deve refletir o padrão /paginas/slug */}
+            <Link to="/paginas/sobre-nos" className="cursor-pointer hover:underline">Sobre Nós</Link>
+            <Link to="/paginas/politica-de-privacidade" className="cursor-pointer hover:underline">Política de Privacidade</Link>
+            <Link to="/paginas/termos-de-uso" className="cursor-pointer hover:underline">Termos de Uso</Link>
+            <Link to="/paginas/acessibilidade" className="cursor-pointer hover:underline">Acessibilidade</Link>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <h3 className="font-suez text-[20px] md:text-[24px] text-[#CDF22B] uppercase">Ajuda</h3>
           <div className="flex flex-col gap-3 font-bold text-[16px] text-[#FAFAFA] uppercase">
-            <Link to="/suporte" className="cursor-pointer">Suporte</Link>
-            <Link to="/faq" className="cursor-pointer">FAQ</Link>
+            <Link to="/suporte" className="cursor-pointer hover:underline">Suporte</Link>
+            <Link to="/paginas/faq" className="cursor-pointer hover:underline">FAQ</Link>
           </div>
         </div>
 

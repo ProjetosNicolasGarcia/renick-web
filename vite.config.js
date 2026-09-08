@@ -13,6 +13,7 @@ export default defineConfig({
     allowedHosts: [
       '172.18.166.63.nip.io',
       '.nip.io', // permite qualquer subdominio nip.io
+      'viscoid-corbin-petrologically.ngrok-free.dev',
     ],
   },
   test: {

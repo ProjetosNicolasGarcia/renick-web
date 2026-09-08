@@ -12,6 +12,9 @@ node_modules
 dist
 dist-ssr
 
+/my-mercadopago-app
+
+
 # variaveis de ambiente
 .env
 .env.local
