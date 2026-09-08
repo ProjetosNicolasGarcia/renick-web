@@ -13,6 +13,7 @@ import Product from './pages/Product';
 import Listing from './pages/Listing';
 import Favorites from './pages/Favorites';
 import StaticPage from './pages/StaticPage';
+import SupportPage from './pages/SupportPage';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/products/:id" element={<Product />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/paginas/:slug" element={<StaticPage />} />
+          <Route path="/suporte" element={<SupportPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
